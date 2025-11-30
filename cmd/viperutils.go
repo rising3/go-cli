@@ -35,3 +35,13 @@ func GetConfigFile(profile string) string {
 		return profile + "." + strings.ToLower(CliConfigType)
 	}
 }
+
+// BuildEffectiveConfig returns the effective configuration as a plain map.
+// It converts the in-memory `CliConfig` into a generic map suitable for
+// passing to internal packages that shouldn't depend on viper.
+func BuildEffectiveConfig() map[string]interface{} {
+	return map[string]interface{}{
+		"client-id":     CliConfig.ClientID,
+		"client-secret": CliConfig.ClientSecret,
+	}
+}
