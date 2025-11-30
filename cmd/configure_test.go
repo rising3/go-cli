@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/rising3/go-cli/internal/cmd/configure"
 	"github.com/spf13/cobra"
 )
 
@@ -203,5 +204,166 @@ func TestConfigureForceOverwrites(t *testing.T) {
 	}
 	if !contains(string(b), "client-id: f-id") {
 		t.Fatalf("expected file to be overwritten with client-id f-id; got:\n%s", string(b))
+	}
+}
+
+// T030: Test --force flag is passed correctly
+func TestConfigureCommand_ForceFlag(t *testing.T) {
+	// Mock ConfigureFunc
+	oldFunc := configure.ConfigureFunc
+	defer func() { configure.ConfigureFunc = oldFunc }()
+
+	var capturedTarget string
+	var capturedOpts configure.ConfigureOptions
+
+	configure.ConfigureFunc = func(target string, opts configure.ConfigureOptions) error {
+		capturedTarget = target
+		capturedOpts = opts
+		return nil
+	}
+
+	// Setup
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	oldCfgForce := cfgForce
+	oldProfile := profile
+	t.Cleanup(func() {
+		cfgForce = oldCfgForce
+		profile = oldProfile
+	})
+
+	cfgForce = true
+	profile = ""
+
+	// Execute
+	cmd := &cobra.Command{}
+	if err := configureCmd.RunE(cmd, []string{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify Force flag was passed
+	if !capturedOpts.Force {
+		t.Error("Force flag not passed correctly")
+	}
+
+	// Verify target path is correct
+	expectedTarget := filepath.Join(GetConfigPath(), GetConfigFile(DefaultProfile))
+	if capturedTarget != expectedTarget {
+		t.Errorf("target = %q, want %q", capturedTarget, expectedTarget)
+	}
+}
+
+// T031: Test --edit flag is passed correctly
+func TestConfigureCommand_EditFlag(t *testing.T) {
+	// Mock ConfigureFunc
+	oldFunc := configure.ConfigureFunc
+	defer func() { configure.ConfigureFunc = oldFunc }()
+
+	var capturedOpts configure.ConfigureOptions
+
+	configure.ConfigureFunc = func(target string, opts configure.ConfigureOptions) error {
+		capturedOpts = opts
+		return nil
+	}
+
+	// Setup
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	oldCfgEdit := cfgEdit
+	t.Cleanup(func() {
+		cfgEdit = oldCfgEdit
+	})
+
+	cfgEdit = true
+
+	// Execute
+	cmd := &cobra.Command{}
+	if err := configureCmd.RunE(cmd, []string{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify Edit flag was passed
+	if !capturedOpts.Edit {
+		t.Error("Edit flag not passed correctly")
+	}
+}
+
+// T032: Test --no-wait flag is passed correctly
+func TestConfigureCommand_NoWaitFlag(t *testing.T) {
+	// Mock ConfigureFunc
+	oldFunc := configure.ConfigureFunc
+	defer func() { configure.ConfigureFunc = oldFunc }()
+
+	var capturedOpts configure.ConfigureOptions
+
+	configure.ConfigureFunc = func(target string, opts configure.ConfigureOptions) error {
+		capturedOpts = opts
+		return nil
+	}
+
+	// Setup
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	oldCfgNoWait := cfgNoWait
+	t.Cleanup(func() {
+		cfgNoWait = oldCfgNoWait
+	})
+
+	cfgNoWait = true
+
+	// Execute
+	cmd := &cobra.Command{}
+	if err := configureCmd.RunE(cmd, []string{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify EditorShouldWait returns false (no wait)
+	if capturedOpts.EditorShouldWait == nil {
+		t.Fatal("EditorShouldWait function not set")
+	}
+
+	shouldWait := capturedOpts.EditorShouldWait("", nil)
+	if shouldWait {
+		t.Error("Expected EditorShouldWait to return false when NoWait is true")
+	}
+}
+
+// T033: Test --profile flag changes target path
+func TestConfigureCommand_ProfileFlag(t *testing.T) {
+	// Mock ConfigureFunc
+	oldFunc := configure.ConfigureFunc
+	defer func() { configure.ConfigureFunc = oldFunc }()
+
+	var capturedTarget string
+
+	configure.ConfigureFunc = func(target string, opts configure.ConfigureOptions) error {
+		capturedTarget = target
+		return nil
+	}
+
+	// Setup
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	oldProfile := profile
+	t.Cleanup(func() {
+		profile = oldProfile
+	})
+
+	profile = "production"
+
+	// Execute
+	cmd := &cobra.Command{}
+	if err := configureCmd.RunE(cmd, []string{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify target path includes profile name
+	expectedTarget := filepath.Join(GetConfigPath(), GetConfigFile("production"))
+	if capturedTarget != expectedTarget {
+		t.Errorf("target = %q, want %q", capturedTarget, expectedTarget)
 	}
 }
