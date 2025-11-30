@@ -2,7 +2,7 @@ BIN_NAME ?= mycli
 
 .PHONY: all build test fmt lint clean
 
-all: build test fmt lint
+all: test fmt lint build
 
 build:
 	go build -o bin/${BIN_NAME} main.go

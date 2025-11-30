@@ -16,7 +16,6 @@ archives:
     files:
       - LICENSE
       - README.md
-      - mycli.yaml
       - bin/mycli*
 release:
   github:
