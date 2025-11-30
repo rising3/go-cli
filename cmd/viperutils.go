@@ -37,11 +37,21 @@ func GetConfigFile(profile string) string {
 }
 
 // BuildEffectiveConfig returns the effective configuration as a plain map.
-// It converts the in-memory `CliConfig` into a generic map suitable for
-// passing to internal packages that shouldn't depend on viper.
+// It returns a nested map with default values for all configuration fields,
+// suitable for generating new configuration files via the configure command.
 func BuildEffectiveConfig() map[string]interface{} {
 	return map[string]interface{}{
-		"client-id":     CliConfig.ClientID,
-		"client-secret": CliConfig.ClientSecret,
+		"client-id":     "",
+		"client-secret": "",
+		"common": map[string]interface{}{
+			"var1": "",
+			"var2": 123,
+		},
+		"hoge": map[string]interface{}{
+			"fuga": "hello",
+			"foo": map[string]interface{}{
+				"bar": "hello",
+			},
+		},
 	}
 }

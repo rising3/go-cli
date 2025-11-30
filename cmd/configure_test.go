@@ -46,17 +46,24 @@ func TestConfigureCreatesFile(t *testing.T) {
 		t.Fatalf("expected config file to exist at %s: %v", cfgPath, err)
 	}
 
-	// verify contents
+	// verify contents - now generates defaults, not CliConfig values
 	b, err := os.ReadFile(cfgPath)
 	if err != nil {
 		t.Fatalf("read file: %v", err)
 	}
 	s := string(b)
-	if !contains(s, "client-id: test-id") {
+	// Verify structure contains all required keys
+	if !contains(s, "client-id:") {
 		t.Fatalf("config content missing client-id; got:\n%s", s)
 	}
-	if !contains(s, "client-secret: test-secret") {
+	if !contains(s, "client-secret:") {
 		t.Fatalf("config content missing client-secret; got:\n%s", s)
+	}
+	if !contains(s, "common:") {
+		t.Fatalf("config content missing common section; got:\n%s", s)
+	}
+	if !contains(s, "hoge:") {
+		t.Fatalf("config content missing hoge section; got:\n%s", s)
 	}
 }
 
@@ -197,13 +204,24 @@ func TestConfigureForceOverwrites(t *testing.T) {
 		t.Fatalf("configure RunE failed with --force: %v", err)
 	}
 
-	// verify file now contains new client-id
+	// verify file now contains new structure with defaults (not old content)
 	b, err = os.ReadFile(target)
 	if err != nil {
 		t.Fatalf("read after force: %v", err)
 	}
-	if !contains(string(b), "client-id: f-id") {
-		t.Fatalf("expected file to be overwritten with client-id f-id; got:\n%s", string(b))
+	s := string(b)
+	// File should be overwritten with default structure
+	if contains(s, "client-id: old") {
+		t.Fatalf("expected file to be overwritten, but still contains old content:\n%s", s)
+	}
+	if !contains(s, "client-id:") {
+		t.Fatalf("expected file to contain client-id key; got:\n%s", s)
+	}
+	if !contains(s, "common:") {
+		t.Fatalf("expected file to contain common section; got:\n%s", s)
+	}
+	if !contains(s, "hoge:") {
+		t.Fatalf("expected file to contain hoge section; got:\n%s", s)
 	}
 }
 
@@ -365,5 +383,83 @@ func TestConfigureCommand_ProfileFlag(t *testing.T) {
 	expectedTarget := filepath.Join(GetConfigPath(), GetConfigFile("production"))
 	if capturedTarget != expectedTarget {
 		t.Errorf("target = %q, want %q", capturedTarget, expectedTarget)
+	}
+}
+
+// TestConfigureCommand_GeneratesNewStructure verifies that the configure
+// command generates a YAML file with the new nested structure containing
+// all required sections (common, hoge.foo). This validates User Story 4:
+// backward compatibility while generating new structure.
+func TestConfigureCommand_GeneratesNewStructure(t *testing.T) {
+	// Setup temporary HOME
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	// Backup and restore globals
+	oldCfgForce := cfgForce
+	oldCfgEdit := cfgEdit
+	oldProfile := profile
+	t.Cleanup(func() {
+		cfgForce = oldCfgForce
+		cfgEdit = oldCfgEdit
+		profile = oldProfile
+	})
+
+	// Set flags for force creation without editor
+	cfgForce = true
+	cfgEdit = false
+	profile = ""
+
+	// Execute configure command
+	if err := configureCmd.RunE(&cobra.Command{}, []string{}); err != nil {
+		t.Fatalf("configure RunE failed: %v", err)
+	}
+
+	// Verify file exists
+	cfgPath := filepath.Join(GetConfigPath(), GetConfigFile(DefaultProfile))
+	if _, err := os.Stat(cfgPath); err != nil {
+		t.Fatalf("expected config file to exist at %s: %v", cfgPath, err)
+	}
+
+	// Read and verify YAML structure
+	b, err := os.ReadFile(cfgPath)
+	if err != nil {
+		t.Fatalf("read file: %v", err)
+	}
+	content := string(b)
+
+	// Verify all required top-level keys
+	if !contains(content, "client-id:") {
+		t.Errorf("missing client-id in generated YAML:\n%s", content)
+	}
+	if !contains(content, "client-secret:") {
+		t.Errorf("missing client-secret in generated YAML:\n%s", content)
+	}
+
+	// Verify nested common section
+	if !contains(content, "common:") {
+		t.Errorf("missing common section in generated YAML:\n%s", content)
+	}
+	if !contains(content, "var1:") {
+		t.Errorf("missing var1 in common section:\n%s", content)
+	}
+	if !contains(content, "var2:") {
+		t.Errorf("missing var2 in common section:\n%s", content)
+	}
+
+	// Verify nested hoge section
+	if !contains(content, "hoge:") {
+		t.Errorf("missing hoge section in generated YAML:\n%s", content)
+	}
+	if !contains(content, "fuga:") {
+		t.Errorf("missing fuga in hoge section:\n%s", content)
+	}
+
+	// Verify deeply nested foo section
+	if !contains(content, "foo:") {
+		t.Errorf("missing foo section in hoge:\n%s", content)
+	}
+	if !contains(content, "bar:") {
+		t.Errorf("missing bar in foo section:\n%s", content)
 	}
 }

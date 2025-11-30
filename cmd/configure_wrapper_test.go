@@ -40,9 +40,7 @@ func TestConfigureWrapperCallsInternal(t *testing.T) {
 	cfgForce = false
 	cfgEdit = true
 	profile = "dev"
-	// set CliConfig so cmd builds data map
-	CliConfig.ClientID = "wrap-id"
-	CliConfig.ClientSecret = "wrap-secret"
+	// Note: BuildEffectiveConfig now returns hardcoded defaults, not CliConfig values
 
 	if err := configureCmd.RunE(&cobra.Command{}, []string{}); err != nil {
 		t.Fatalf("configure RunE failed: %v", err)
@@ -67,8 +65,15 @@ func TestConfigureWrapperCallsInternal(t *testing.T) {
 	if calledData == nil {
 		t.Fatalf("expected data to be passed to internal func")
 	}
-	if v, _ := calledData["client-id"].(string); v != "wrap-id" {
-		t.Fatalf("expected client-id wrap-id passed, got %v", calledData["client-id"])
+	// Verify data has required keys (now contains defaults, not CliConfig values)
+	if _, ok := calledData["client-id"]; !ok {
+		t.Fatalf("expected client-id key in data")
+	}
+	if _, ok := calledData["common"]; !ok {
+		t.Fatalf("expected common key in data")
+	}
+	if _, ok := calledData["hoge"]; !ok {
+		t.Fatalf("expected hoge key in data")
 	}
 
 	// by default --no-wait is false, so EditorShouldWait should be true
@@ -99,10 +104,7 @@ func TestConfigureWrapper_NoWaitFlagPassed(t *testing.T) {
 	cfgEdit = true
 	cfgNoWait = true
 	profile = "dev"
-
-	// ensure CliConfig has values so BuildEffectiveConfig produces a map
-	CliConfig.ClientID = "wrap-id"
-	CliConfig.ClientSecret = "wrap-secret"
+	// Note: BuildEffectiveConfig now returns hardcoded defaults, not CliConfig values
 
 	if err := configureCmd.RunE(&cobra.Command{}, []string{}); err != nil {
 		t.Fatalf("configure RunE failed: %v", err)
