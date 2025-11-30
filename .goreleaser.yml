@@ -1,0 +1,26 @@
+project_name: mycli
+builds:
+  - main: ./main.go
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags: -s -w
+    binary: mycli
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - mycli.yaml
+      - bin/mycli*
+release:
+  github:
+    owner: rising3
+    name: mycli
+    draft: true
+    prerelease: false
