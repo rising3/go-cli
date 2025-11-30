@@ -19,8 +19,24 @@ const (
 )
 
 type Config struct {
-	ClientID     string `mapstructure:"client-id"`
-	ClientSecret string `mapstructure:"client-secret"`
+	ClientID     string       `mapstructure:"client-id"`
+	ClientSecret string       `mapstructure:"client-secret"`
+	Common       CommonConfig `mapstructure:"common"`
+	Hoge         HogeConfig   `mapstructure:"hoge"`
+}
+
+type CommonConfig struct {
+	Var1 string `mapstructure:"var1"`
+	Var2 int    `mapstructure:"var2"`
+}
+
+type HogeConfig struct {
+	Fuga string    `mapstructure:"fuga"`
+	Foo  FooConfig `mapstructure:"foo"`
+}
+
+type FooConfig struct {
+	Bar string `mapstructure:"bar"`
 }
 
 var CliConfig Config
