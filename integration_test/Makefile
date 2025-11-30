@@ -9,12 +9,12 @@ ifdef BATS_VERBOSE
     BATS_FLAGS += --verbose-run
 endif
 
-.PHONY: all test-root test-configure test-echo check-binary check-bats clean
+.PHONY: all test-root test-configure test-echo test-cat check-binary check-bats clean
 
 # Default target: run all tests
 all: check-binary check-bats
 	@echo "Running all integration tests..."
-	@$(BATS) $(BATS_FLAGS) root.bats configure.bats echo.bats
+	@$(BATS) $(BATS_FLAGS) root.bats configure.bats echo.bats cat.bats
 
 # Run root command tests only
 test-root: check-binary check-bats
@@ -30,6 +30,11 @@ test-configure: check-binary check-bats
 test-echo: check-binary check-bats
 	@echo "Running echo command tests..."
 	@$(BATS) $(BATS_FLAGS) echo.bats
+
+# Run cat command tests only
+test-cat: check-binary check-bats
+	@echo "Running cat command tests..."
+	@$(BATS) $(BATS_FLAGS) cat.bats
 
 # Check that mycli binary exists
 check-binary:
