@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	internalcmd "github.com/rising3/go-cli/internal/cmd"
+	"github.com/rising3/go-cli/internal/cmd/configure"
 	"github.com/spf13/cobra"
 )
 
@@ -21,8 +21,8 @@ func TestConfigureWrapperCallsInternal(t *testing.T) {
 	var calledShouldWait bool
 
 	// stub internal implementation
-	old := internalcmd.ConfigureFunc
-	internalcmd.ConfigureFunc = func(target string, opts internalcmd.ConfigureOptions) error {
+	old := configure.ConfigureFunc
+	configure.ConfigureFunc = func(target string, opts configure.ConfigureOptions) error {
 		calledTarget = target
 		calledForce = opts.Force
 		calledEdit = opts.Edit
@@ -34,7 +34,7 @@ func TestConfigureWrapperCallsInternal(t *testing.T) {
 		}
 		return nil
 	}
-	defer func() { internalcmd.ConfigureFunc = old }()
+	defer func() { configure.ConfigureFunc = old }()
 
 	// ensure flags are set as expected
 	cfgForce = false
@@ -84,15 +84,15 @@ func TestConfigureWrapper_NoWaitFlagPassed(t *testing.T) {
 	var calledShouldWait *bool
 
 	// stub internal implementation
-	old := internalcmd.ConfigureFunc
-	internalcmd.ConfigureFunc = func(target string, opts internalcmd.ConfigureOptions) error {
+	old := configure.ConfigureFunc
+	configure.ConfigureFunc = func(target string, opts configure.ConfigureOptions) error {
 		if opts.EditorShouldWait != nil {
 			v := opts.EditorShouldWait("editor", []string{})
 			calledShouldWait = &v
 		}
 		return nil
 	}
-	defer func() { internalcmd.ConfigureFunc = old }()
+	defer func() { configure.ConfigureFunc = old }()
 
 	// set flags: enable edit and set no-wait
 	cfgForce = false

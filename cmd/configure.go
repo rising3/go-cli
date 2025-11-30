@@ -3,31 +3,27 @@ package cmd
 import (
 	"path/filepath"
 
-	internalcmd "github.com/rising3/go-cli/internal/cmd"
-	editor "github.com/rising3/go-cli/internal/editor"
-	stdio "github.com/rising3/go-cli/internal/stdio"
+	"github.com/rising3/go-cli/internal/cmd/configure"
+	"github.com/rising3/go-cli/internal/editor"
 	"github.com/spf13/cobra"
 )
 
 var cfgForce bool
 var cfgEdit bool
 var cfgNoWait bool
-var cfgInput string
-var cfgOutput string
 
 func init() {
 	rootCmd.AddCommand(configureCmd)
 	configureCmd.Flags().BoolVar(&cfgForce, "force", false, "overwrite existing config")
 	configureCmd.Flags().BoolVar(&cfgEdit, "edit", false, "edit the created file in $EDITOR")
 	configureCmd.Flags().BoolVar(&cfgNoWait, "no-wait", false, "do not wait for editor to exit")
-	configureCmd.Flags().StringVar(&cfgInput, "input", "", "read input from path ('-' for stdin)")
-	configureCmd.Flags().StringVar(&cfgOutput, "output", "", "write output to path ('-' for stdout)")
 }
 
 var configureCmd = &cobra.Command{
 	Use:   "configure",
 	Short: "Create a scaffold config file based on Config struct",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// T036: Determine target path
 		dir := GetConfigPath()
 		cfgName := DefaultProfile
 		if profile != "" {
@@ -35,16 +31,20 @@ var configureCmd = &cobra.Command{
 		}
 		target := filepath.Join(dir, GetConfigFile(cfgName))
 
-		opts := internalcmd.ConfigureOptions{
+		// T037-T039: Build ConfigureOptions
+		opts := configure.ConfigureOptions{
 			Force:            cfgForce,
 			Edit:             cfgEdit,
+			NoWait:           cfgNoWait,
 			Data:             BuildEffectiveConfig(),
 			Format:           CliConfigType,
-			Streams:          stdio.NewDefault(),
+			Output:           cmd.OutOrStdout(),
+			ErrOutput:        cmd.ErrOrStderr(),
 			EditorLookup:     func() (string, []string, error) { return editor.GetEditor() },
 			EditorShouldWait: func(string, []string) bool { return !cfgNoWait },
 		}
 
-		return internalcmd.ConfigureFunc(target, opts)
+		// T040: Call internal function
+		return configure.ConfigureFunc(target, opts)
 	},
 }
