@@ -31,7 +31,12 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] **TDD必須**: すべての実装に対してテストを先に書く計画があるか？
+- [ ] **パッケージ責務分離**: `cmd/`（CLI）と`internal/`（内部ロジック）が明確に分離されているか？
+- [ ] **コード品質基準**: `gofmt`と`govet`による検証を通過する見込みか？
+- [ ] **設定管理の一貫性**: Viperを使用し、`~/.config/mycli/`配下の設定ファイル構造に従っているか？
+- [ ] **ユーザーエクスペリエンス**: Cobraによる一貫したCLIインターフェースを提供しているか？
+- [ ] **パフォーマンス要件**: CLI起動時間100ms以下、設定読み込み10ms以下を達成できるか？
 
 ## Project Structure
 

@@ -9,6 +9,8 @@ This is a Go CLI application template built with [Cobra](https://github.com/spf1
 - **Configuration**: Viper v1.21.0
 - **Binary Name**: `mycli`
 
+**重要**: このプロジェクトの開発原則・品質基準は `.specify/memory/constitution.md` で定義されています。すべての実装・レビューは憲章の原則に従う必要があります。
+
 ## Build Instructions
 
 ### Prerequisites

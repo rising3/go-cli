@@ -1,50 +1,227 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+=============================================================================
+Sync Impact Report
+=============================================================================
+Version Change: [Initial] → 1.0.0
+Modified Principles: N/A (初回作成)
+Added Sections:
+  - Core Principles (5原則)
+  - 技術スタック
+  - 開発ワークフロー
+  - Governance
+Removed Sections: N/A
+Templates Status:
+  ✅ plan-template.md - Constitution Check セクションに対応済み
+  ✅ spec-template.md - 要件・スコープは原則と整合済み
+  ✅ tasks-template.md - テスト駆動開発とタスク分類に対応済み
+Follow-up TODOs: なし
+=============================================================================
+-->
+
+# go-cli Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. テスト駆動開発 (TDD) [必須・譲渡不可]
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**原則**: すべての実装は必ずテストを先に書く。追加されたモジュールには必ず単体テストコードを用意する。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- テストコードを実装コードと同じパッケージに配置すること（Go標準慣習に従う）
+- テストは実装前に書き、失敗することを確認してから実装に進むこと（Red-Green-Refactorサイクル）
+- テスト・フォーマッター・リンターをすべてパスすることが実装完了の必須条件
+- 単体テストは `*_test.go` ファイル名規約に従うこと
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**根拠**: TDDは品質保証の基盤であり、リファクタリングの安全性を確保する。Goのテストツールチェーンは標準で強力なため、これを最大限活用する。
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. パッケージ責務分離
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**原則**: CLI インターフェースと内部ロジックを明確に分離する。
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- `cmd/` パッケージ: CobraやViperに依存するCLIインターフェース実装のみ配置
+- `internal/` パッケージ: CobraやViperに依存しない内部処理の実装を配置
+- `internal/` 以下の実装は外部からインポート不可能（Go言語仕様により保護）
+- 各パッケージは単一責任の原則に従い、明確な境界を持つこと
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**根拠**: 関心の分離により、CLI フレームワークの変更が内部ロジックに影響しない設計を実現し、テスト容易性と保守性を向上させる。
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. コード品質基準
+
+**原則**: 一貫したコードスタイルと静的解析による品質保証を行う。
+
+- フォーマッター: `gofmt` のみ使用（`-s` オプションで簡略化適用）
+- リンター: `golangci-lint` から `govet` のみ有効化して使用
+- すべてのコミット前に `make all` を実行し、test → fmt → lint → build のすべてをパスすること
+- CI パイプライン（`.github/workflows/ci.yaml`）でも同じ品質ゲートを実施
+
+**根拠**: `gofmt` はGo公式標準、`govet` は最も基本的かつ重要な静的解析ツール。過度なリント設定を避け、必要最小限の品質基準で高速なフィードバックループを実現する。
+
+### IV. 設定管理の一貫性
+
+**原則**: Viper を使用した統一的な設定管理を実装する。
+
+- 設定ファイルは `~/.config/mycli/` 配下に配置
+- デフォルト設定: `~/.config/mycli/default.yaml`
+- プロファイル設定: `~/.config/mycli/<profile>.yaml`
+- 環境変数のプレフィックス: `MYCLI_*`（例: `MYCLI_CONFIG`, `MYCLI_PROFILE`）
+- 設定構造体のフィールドには `mapstructure` タグを使用し、kebab-case 命名を採用
+
+**根拠**: Viper は設定ファイル、環境変数、コマンドラインフラグを統一的に扱い、12-Factor App の原則に準拠した柔軟な設定管理を提供する。
+
+### V. ユーザーエクスペリエンスの一貫性
+
+**原則**: CLIの使いやすさと一貫性を最優先する。
+
+- Cobra を使用したサブコマンド構造の統一
+- ヘルプメッセージは明確で、例を含めること
+- エラーメッセージは具体的で、解決方法を示唆すること
+- 標準入出力の適切な使用: 通常出力は `stdout`、エラーは `stderr`
+- 対話的操作が必要な場合は、エディタ起動などOS標準の方法を利用
+
+**根拠**: 優れたCLIツールは学習曲線が低く、直感的に使えることが重要。ユーザーの生産性向上がツールの価値を決定する。
+
+## 技術スタック
+
+### 必須要件
+
+| カテゴリ | ツール/バージョン | 用途 | 備考 |
+|---------|------------------|------|------|
+| 言語 | Go 1.25.4 | 実装言語 | `go.mod` で指定 |
+| CLI フレームワーク | Cobra v1.10.1+ | サブコマンド構造 | `@latest` 利用 |
+| 設定管理 | Viper v1.21.0+ | 設定ファイル/環境変数 | `@latest` 利用 |
+| フォーマッター | gofmt | コード整形 | Go標準ツール |
+| リンター | govet (via golangci-lint) | 静的解析 | golangci-lint v2.6.2 |
+| ビルドツール | GNU Make | ビルド自動化 | `.PHONY` 宣言必須 |
+
+### プロジェクト構造規約
+
+```
+go-cli/
+├── .github/          # プロジェクトルート（Goソースコードのルート）
+├── main.go           # エントリーポイント（cmd.Execute()を呼ぶだけ）
+├── cmd/              # Cobra/Viperに依存するCLIインターフェース
+│   ├── root.go       # ルートコマンド、設定初期化
+│   └── *_test.go     # コマンドの単体テスト
+├── internal/         # Cobra/Viperに依存しない内部実装
+│   └── *_test.go     # 内部ロジックの単体テスト
+├── bin/              # ビルド成果物の配置先
+├── Makefile          # ビルドターゲット定義（.PHONY宣言必須）
+└── go.mod            # Go モジュール定義
+```
+
+### ビルドターゲット（Makefile）
+
+すべてのターゲットは `.PHONY` 宣言すること:
+
+- `make build`: バイナリを `bin/mycli` にビルド
+- `make test`: 全テスト実行 (`go test ./...`)
+- `make fmt`: コード整形 (`gofmt -s -w .`)
+- `make lint`: 静的解析 (`golangci-lint run --enable=govet`)
+- `make all`: test → fmt → lint → build の順で実行（推奨）
+- `make clean`: `bin/` ディレクトリを削除
+
+### パフォーマンス要件
+
+- CLIコマンドの起動時間: 100ms以下（体感的な即応性）
+- 設定ファイル読み込み: 10ms以下（通常のYAMLサイズ想定）
+- ヘルプメッセージ表示: 50ms以下
+- メモリ使用量: 起動時50MB以下（Go標準ランタイム含む）
+
+これらの要件を超える場合は、プロファイリングを実施し、パフォーマンス改善を優先タスクとすること。
+
+## 開発ワークフロー
+
+### 実装プロセス（必須手順）
+
+1. **テストファースト**
+   - 新機能の要件を理解し、受け入れ基準を明確にする
+   - `*_test.go` ファイルにテストケースを書く
+   - テストを実行し、失敗することを確認（Red）
+
+2. **最小実装**
+   - テストをパスする最小限の実装を行う（Green）
+   - 早期に動作確認し、フィードバックループを短くする
+
+3. **リファクタリング**
+   - テストをパスした状態で、コードの可読性・保守性を向上させる（Refactor）
+   - テストが引き続きパスすることを確認
+
+4. **品質ゲート**
+   - `make all` を実行し、すべてのチェックをパスすること
+   - 失敗した場合は修正し、再度実行
+
+5. **コミット**
+   - 論理的な単位でコミットする
+   - コミットメッセージは明確に（例: `feat: add configure command`, `test: add editor detection tests`）
+
+### CI パイプライン
+
+`.github/workflows/ci.yaml` が PR に対して自動実行される（対象ブランチ: `main`, `next`, `feature/**`）:
+
+1. Go 1.25.x のセットアップ
+2. golangci-lint v2.6.2 のインストール
+3. `make build`
+4. `make test`
+5. `make fmt`
+6. `make lint`
+
+**ローカルで `make all` が成功していれば CI もパスする**。CI 失敗を避けるため、必ずプッシュ前にローカル検証を行うこと。
+
+### 新機能追加の手順
+
+1. `cmd/` に新しいコマンドファイルを作成（例: `cmd/newcmd.go`）
+2. `&cobra.Command{}` でコマンドを定義
+3. `init()` 関数で `rootCmd.AddCommand()` により登録
+4. 同じパッケージに `cmd/newcmd_test.go` を作成し、テストを書く
+5. 内部ロジックが必要な場合は `internal/` 以下に実装し、対応するテストを作成
+6. `make all` で検証
+7. コミット＆プッシュ
+
+### テスト戦略
+
+- **単体テスト**: すべてのパッケージで必須。`*_test.go` ファイルに記述
+- **テスト分離**: `t.TempDir()` で一時ディレクトリを使用し、テスト間の干渉を防ぐ
+- **グローバル変数のモック**: テスト内でグローバル変数を上書きする場合は `t.Cleanup()` で元に戻す
+- **プロセス実行のモック**: `internal/proc.ExecCommand` などはテストでモック可能な設計にする
+- **特定テストの実行**: `go test -run TestName ./...`
+- **詳細出力**: `go test -v ./...`
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### 憲章の位置づけ
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+この憲章は、go-cli プロジェクトにおけるすべての実装・レビュー・意思決定に優先される。他のドキュメント（README、実装ガイドなど）と矛盾する場合は、この憲章が優先される。
+
+### 遵守義務
+
+- すべてのPR・コードレビューは、この憲章の原則に準拠しているかを検証すること
+- 原則に違反する実装は、その理由を明確に文書化し、承認を得ること（複雑性トラッキング）
+- 憲章の原則を無視した実装は、技術的負債として記録され、優先的にリファクタリング対象となる
+
+### 改訂プロセス
+
+1. **改訂提案**: 憲章の変更が必要な場合、以下を含む提案を作成:
+   - 変更理由（現状の問題点）
+   - 変更内容（具体的な修正案）
+   - 影響範囲（既存コード・テンプレートへの影響）
+   - 移行計画（既存実装の適合方法）
+
+2. **バージョニングルール**:
+   - **MAJOR**: 原則の削除・根本的な再定義など、後方互換性のない変更
+   - **MINOR**: 新原則の追加・セクションの拡張など、既存実装に影響しない追加
+   - **PATCH**: 文言の明確化・誤字修正・非セマンティックな改善
+
+3. **承認と反映**:
+   - 提案が承認されたら、`CONSTITUTION_VERSION` をインクリメント
+   - `LAST_AMENDED_DATE` を更新日（ISO 8601形式: YYYY-MM-DD）に設定
+   - 関連テンプレート（`.specify/templates/` 以下）の整合性を確認・更新
+   - Sync Impact Report を憲章ファイルの先頭に HTML コメントとして追加
+
+4. **定期レビュー**:
+   - 四半期ごとに憲章の有効性をレビュー
+   - プロジェクトの成長に応じて原則を進化させる
+
+### ランタイムガイダンス
+
+この憲章は設計原則を定義するものであり、日々の開発における具体的な実装ガイドは `.github/copilot-instructions.md` を参照すること。憲章とガイダンスファイルの整合性は、改訂時に必ず確認すること。
+
+**Version**: 1.0.0 | **Ratified**: 2025-11-30 | **Last Amended**: 2025-11-30
