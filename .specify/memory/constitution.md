@@ -172,7 +172,7 @@ go-cli/
 2. `&cobra.Command{}` でコマンドを定義
 3. `init()` 関数で `rootCmd.AddCommand()` により登録
 4. 同じパッケージに `cmd/newcmd_test.go` を作成し、テストを書く
-5. 内部ロジックが必要な場合は `internal/` 以下に実装し、対応するテストを作成
+5. 内部ロジックが必要な場合は `internal/cmd/{subcommand}` 以下に実装し、対応するテストを作成
 6. `make all` で検証
 7. コミット＆プッシュ
 

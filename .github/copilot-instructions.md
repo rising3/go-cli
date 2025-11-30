@@ -67,7 +67,11 @@ go-cli/
 │   └── *_test.go             # Command tests
 ├── internal/                  # Internal packages
 │   ├── cmd/                  # Internal command logic
-│   │   └── configure.go      # ConfigureFile implementation
+│   │   ├── newcmd/           # new command implementation
+│   │   ├── echo/             # ConfigureFile implementation
+│   │   │   └── echo.go
+│   │   └── configure/        # configure command implementation
+│   │       └── configure.go
 │   ├── editor/               # Editor detection (EDITOR env, OS defaults)
 │   ├── proc/                 # Process execution utilities
 │   └── stdio/                # Standard I/O stream utilities
@@ -80,7 +84,7 @@ go-cli/
 
 - **`cmd/root.go`**: Defines `CliName`, `CliVersion`, `Config` struct, and configuration loading logic
 - **`cmd/configure.go`**: Implements `configure` command for creating config files
-- **`internal/cmd/configure.go`**: Core logic for config file creation and editor invocation
+- **`internal/cmd/configure/configure.go`**: Core logic for config file creation and editor invocation
 - **`internal/editor/editor.go`**: Editor detection with OS-specific fallbacks
 
 ## CI Pipeline
